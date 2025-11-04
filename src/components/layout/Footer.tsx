@@ -1,14 +1,24 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
+          {/* Company Info with Logo */}
           <div className="md:col-span-2">
-            <Link href="/" className="text-2xl font-bold text-white mb-4 block">
-              Fish Supreme
+            <Link href="/" className="block mb-4">
+              <div className="relative w-48 h-12">
+                <Image
+                  src="/logo-transparent.png"
+                  alt="Fish Supreme Integrated Farm"
+                  fill
+                  className="object-contain"
+                  priority={false}
+                  sizes="(max-width: 768px) 192px, 192px"
+                />
+              </div>
             </Link>
             <p className="text-gray-400 mb-6 max-w-md leading-relaxed">
               Nigeria's premier aquaculture export hub, delivering premium quality fish products from our sustainable farms in Plateau State to global markets.

@@ -1,38 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-  const isHomePage = pathname === '/';
 
-  useEffect(() => {
-    if (isHomePage) {
-      const handleScroll = () => {
-        setIsScrolled(window.scrollY > 10);
-      };
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
-    } else {
-      setIsScrolled(true);
-    }
-  }, [isHomePage]);
+  // Stable navigation items array
+  const navItems = [
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+    { name: 'Products', href: '/products' },
+    { name: 'Export', href: '/export' },
+    { name: 'Contact', href: '/contact' },
+  ];
 
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isHomePage 
-        ? (isScrolled ? 'bg-white shadow-lg py-2' : 'bg-transparent py-4')
-        : 'bg-white shadow-lg py-2'
-    }`}>
+    <header className="fixed top-0 w-full z-50 bg-white shadow-lg py-2 border-b border-primary-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-5 lg:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center -ml-16 sm:-ml-20 lg:-ml-24">
             <div className="relative w-64 h-16">
               <Image
                 src="/logo-transparent.png"
@@ -47,32 +36,18 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {[
-              { name: 'Home', href: '/' },
-              { name: 'About', href: '/about' },
-              { name: 'Products', href: '/products' },
-              { name: 'Export', href: '/export' },
-              { name: 'Contact', href: '/contact' },
-            ].map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`font-medium transition-all hover:scale-105 text-sm ${
-                  isHomePage && !isScrolled 
-                    ? 'text-white hover:text-gray-200' 
-                    : 'text-gray-700 hover:text-primary-600'
-                }`}
+                className="font-medium transition-all hover:scale-105 text-sm text-gray-700 hover:text-primary-600"
               >
                 {item.name}
               </Link>
             ))}
             <Link
               href="/contact"
-              className={`px-4 py-2 rounded-full font-semibold transition-all hover:shadow-lg text-sm ${
-                isHomePage && !isScrolled
-                  ? 'bg-white text-primary-600 hover:bg-gray-100'
-                  : 'bg-primary-600 text-white hover:bg-primary-700'
-              }`}
+              className="px-4 py-2 rounded-full font-semibold transition-all hover:shadow-lg text-sm bg-primary-600 text-white hover:bg-primary-700 border border-primary-500"
             >
               Get Quote
             </Link>
@@ -81,9 +56,8 @@ export function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`md:hidden p-2 rounded-lg transition-colors ${
-              isHomePage && !isScrolled ? 'text-white' : 'text-gray-700'
-            }`}
+            className="md:hidden p-2 rounded-lg transition-colors text-gray-700"
+            aria-label="Toggle menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMobileMenuOpen ? (
@@ -99,13 +73,7 @@ export function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
             <div className="px-4 py-4 space-y-3">
-              {[
-                { name: 'Home', href: '/' },
-                { name: 'About', href: '/about' },
-                { name: 'Products', href: '/products' },
-                { name: 'Export', href: '/export' },
-                { name: 'Contact', href: '/contact' },
-              ].map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
