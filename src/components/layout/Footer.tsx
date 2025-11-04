@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info with Logo */}
           <div className="md:col-span-2">
-            <Link href="/" className="block mb-4">
+            <Link href="/" className="block mb-4 -ml-24 sm:-ml-30 lg:-ml-34">
               <div className="relative w-48 h-12">
                 <Image
                   src="/logo-transparent.png"
