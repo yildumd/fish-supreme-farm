@@ -21,7 +21,7 @@ export function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-5 lg:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-           <Link href="/" className="flex items-center -ml-38 sm:-ml-44 lg:-ml-48">
+          <Link href="/" className="flex items-center -ml-40 sm:-ml-44 lg:-ml-48">
             <div className="relative w-64 h-16">
               <Image
                 src="/logo-transparent.png"
