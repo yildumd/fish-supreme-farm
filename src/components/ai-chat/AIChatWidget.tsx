@@ -3,50 +3,76 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Mock product data for the AI to recommend
+// Enhanced product database with more details
 const products = {
   fingerlings: {
     name: 'Premium Fingerlings',
-    description: 'Tilapia & Catfish fingerlings for fish farming',
+    description: 'High-quality Tilapia & Catfish fingerlings with excellent growth rates and disease resistance',
     minOrder: '5,000 pieces',
-    price: 'Contact for pricing',
-    bestFor: 'Fish farmers starting new ponds'
+    price: '₦25-₦30 per piece',
+    bestFor: 'New fish farmers, pond stocking',
+    features: ['98% survival rate', 'Fast growth cycle', 'Disease resistant', 'Professional guidance included'],
+    delivery: 'Available nationwide',
+    image: '/images/products/fingerlings.jpg'
   },
   juveniles: {
     name: 'Juvenile Fish',
-    description: '3-4 week old fish ready for grow-out',
+    description: '3-4 week old healthy juveniles ready for grow-out phase',
     minOrder: '1,000 pieces',
-    price: 'Contact for pricing',
-    bestFor: 'Farmers with existing ponds'
+    price: '₦300-₦350 per piece',
+    bestFor: 'Existing farmers, expansion projects',
+    features: ['4-6 weeks to harvest', 'Strong immune system', 'Uniform size', 'Technical support'],
+    delivery: 'Next day delivery available',
+    image: '/images/products/juveniles.jpg'
   },
   'table-size': {
     name: 'Table-Size Live Fish',
-    description: 'Fresh fish for local markets (300-500g)',
+    description: 'Fresh, healthy live fish perfect for local markets and restaurants (300-500g)',
     minOrder: '50kg',
-    price: 'Contact for pricing',
-    bestFor: 'Local markets, restaurants, retailers'
+    price: '₦1,200-₦1,500 per kg',
+    bestFor: 'Restaurants, local markets, retailers',
+    features: ['Fresh daily harvest', 'Various sizes available', 'Live delivery guarantee', 'Bulk discounts'],
+    delivery: 'Same day delivery in Lagos',
+    image: '/images/products/table-size.jpg'
   },
   smoked: {
-    name: 'Smoked Fish',
-    description: 'Export-grade smoked catfish and tilapia',
+    name: 'Premium Smoked Fish',
+    description: 'Export-grade smoked catfish and tilapia with extended shelf life',
     minOrder: '20kg',
-    price: 'Contact for pricing',
-    bestFor: 'Export markets, supermarkets, distributors'
+    price: '₦2,500-₦3,000 per kg',
+    bestFor: 'Export markets, supermarkets, distributors',
+    features: ['6-month shelf life', 'FDA & EU compliant', 'Vacuum packed', 'Custom packaging'],
+    delivery: 'International shipping available',
+    image: '/images/products/smoked.jpg'
   },
   'export-catfish': {
     name: 'Export-Grade Catfish',
-    description: 'Premium catfish for international markets',
+    description: 'Premium quality catfish processed for international markets',
     minOrder: '100kg',
-    price: 'Contact for pricing',
-    bestFor: 'International buyers, wholesalers'
+    price: 'Contact for export pricing',
+    bestFor: 'International buyers, wholesalers, processors',
+    features: ['HACCP certified', 'IQF processing', 'Custom cutting', 'Full documentation'],
+    delivery: 'FOB/CIF terms available',
+    image: '/images/products/export-catfish.jpg'
   },
   'export-tilapia': {
     name: 'Export-Grade Tilapia',
-    description: 'High-quality tilapia for export',
+    description: 'High-quality tilapia fillets and whole fish for international markets',
     minOrder: '100kg',
-    price: 'Contact for pricing',
-    bestFor: 'International markets, food processors'
+    price: 'Contact for export pricing',
+    bestFor: 'International markets, food processors, distributors',
+    features: ['BAP certified', 'Various cuts available', 'EU compliance', 'Cold chain logistics'],
+    delivery: 'Worldwide shipping',
+    image: '/images/products/export-tilapia.jpg'
   }
+};
+
+// Conversation contexts for better flow
+type ConversationContext = {
+  interest: 'farming' | 'business' | 'export' | 'personal' | null;
+  budget: 'low' | 'medium' | 'high' | null;
+  experience: 'beginner' | 'intermediate' | 'expert' | null;
+  timeline: 'immediate' | '1-2 weeks' | '1-3 months' | 'planning' | null;
 };
 
 type Message = {
@@ -55,7 +81,8 @@ type Message = {
   sender: 'user' | 'ai';
   timestamp: Date;
   productRecommendation?: keyof typeof products;
-  action?: 'collect-contact' | 'redirect-contact' | null;
+  action?: 'collect-contact' | 'redirect-contact' | 'product-details' | 'budget-discussion' | null;
+  quickReplies?: string[];
 };
 
 export function AIChatWidget() {
@@ -64,66 +91,91 @@ export function AIChatWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [collectingContact, setCollectingContact] = useState(false);
-  const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
+  const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '', business: '' });
+  const [conversationContext, setConversationContext] = useState<ConversationContext>({
+    interest: null,
+    budget: null,
+    experience: null,
+    timeline: null
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Initial AI message when chat opens
+  // Enhanced initial message with better engagement
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const welcomeMessage: Message = {
         id: '1',
-        content: "Hello! I'm Supreme Selector, your AI aquaculture expert. I can help you find the perfect fish products for your needs. Are you looking to:\n\n• Start a fish farm 🐟\n• Buy for resale/restaurant 🏪\n• Export internationally 🌍\n• Personal consumption 🍽️\n\nJust tell me what you're looking for!",
+        content: `🎣 **Welcome to Fish Supreme!** 
+
+I'm Supreme Selector, your AI aquaculture consultant. I'm here to help you find the perfect fish products for your needs.
+
+**What brings you here today?**
+• 🏗️ Starting a fish farm
+• 💼 Buying for business/resale
+• 🌍 Export requirements
+• 🍽️ Personal consumption
+• 💰 Budget planning
+• 📚 Learning about aquaculture
+
+Tell me about your project and I'll provide personalized recommendations!`,
         sender: 'ai',
-        timestamp: new Date()
+        timestamp: new Date(),
+        quickReplies: [
+          'Start fish farm',
+          'Buy for restaurant',
+          'Export to USA/Europe',
+          'Personal use',
+          'Get price quotes'
+        ]
       };
       setMessages([welcomeMessage]);
     }
   }, [isOpen, messages.length]);
 
-  // Scroll to bottom when new messages are added
+  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Enhanced AI response simulation with context awareness
   const simulateAIResponse = (userMessage: string) => {
     setIsTyping(true);
     
     setTimeout(() => {
       let response = '';
       let productRecommendation: keyof typeof products | undefined;
-      let action: 'collect-contact' | 'redirect-contact' | null = null;
-
+      let action: Message['action'] = null;
+      let quickReplies: string[] = [];
       const lowerMessage = userMessage.toLowerCase();
 
-      // Sales connection triggers
-      if (lowerMessage.includes('sales') || lowerMessage.includes('representative') || 
-          lowerMessage.includes('agent') || lowerMessage.includes('person')) {
-        response = "I'd be happy to connect you with our sales team! They can provide detailed pricing, delivery options, and answer any specific questions. May I get your name and contact information so our team can reach out to you?";
+      // Update conversation context based on user input
+      updateConversationContext(lowerMessage);
+
+      // Intelligent response generation based on context and keywords
+      if (isSalesTrigger(lowerMessage)) {
+        response = generateSalesResponse();
         action = 'collect-contact';
-      }
-      else if (lowerMessage.includes('quote') || lowerMessage.includes('pricing') || lowerMessage.includes('price')) {
-        response = "I can help you get a detailed quote! Our sales team will provide pricing based on your specific needs, quantity, and delivery location. Could you share your name and contact details so we can prepare a custom quote for you?";
-        action = 'collect-contact';
-      }
-      else if (lowerMessage.includes('contact') || lowerMessage.includes('call') || lowerMessage.includes('email')) {
-        response = "I can connect you directly with our team! Would you like to:\n\n• Share your contact info for a callback\n• Visit our contact page with all details\n• Get immediate assistance via WhatsApp";
-        action = 'redirect-contact';
-      }
-      else if (lowerMessage.includes('start') || lowerMessage.includes('farm') || lowerMessage.includes('fingerling')) {
-        response = "Perfect! For starting a fish farm, I recommend our **Premium Fingerlings**. They have excellent growth rates and high survival rates. Would you like details about minimum order quantities and pricing?";
-        productRecommendation = 'fingerlings';
-      } else if (lowerMessage.includes('resale') || lowerMessage.includes('restaurant') || lowerMessage.includes('market')) {
-        response = "For resale or restaurant use, our **Table-Size Live Fish** are ideal. They're fresh, healthy, and perfect for local markets. We also have **Smoked Fish** for longer shelf life. Which are you interested in?";
-        productRecommendation = 'table-size';
-      } else if (lowerMessage.includes('export') || lowerMessage.includes('international') || lowerMessage.includes('ship')) {
-        response = "For international export, I recommend our **Export-Grade Smoked Fish** or **Premium Tilapia**. Both are FDA & EU compliant with full documentation. What's your target market?";
-        productRecommendation = 'export-catfish';
-      } else if (lowerMessage.includes('personal') || lowerMessage.includes('consume') || lowerMessage.includes('family')) {
-        response = "For personal consumption, our **Table-Size Live Fish** are perfect. Fresh, healthy, and available for local delivery. What quantity are you looking for?";
-        productRecommendation = 'table-size';
+        quickReplies = ['Share my details', 'Call me now', 'Visit contact page'];
+      } else if (isPricingTrigger(lowerMessage)) {
+        response = generatePricingResponse();
+        action = 'budget-discussion';
+        quickReplies = ['Under ₦100k', '₦100k-₦500k', 'Over ₦500k', 'Get custom quote'];
+      } else if (isProductInquiry(lowerMessage)) {
+        const { response: productResponse, recommendation } = generateProductResponse(lowerMessage);
+        response = productResponse;
+        productRecommendation = recommendation;
+        action = 'product-details';
+        quickReplies = ['More details', 'Pricing', 'Delivery info', 'Speak to expert'];
+      } else if (isFarmingInterest(lowerMessage)) {
+        response = generateFarmingResponse();
+        quickReplies = ['Fingerlings info', 'Farm setup cost', 'Training needed', 'Market potential'];
+      } else if (isExportInterest(lowerMessage)) {
+        response = generateExportResponse();
+        quickReplies = ['Export requirements', 'Documentation', 'Shipping costs', 'International standards'];
       } else {
-        response = "Thank you for your interest in Fish Supreme! I specialize in helping customers find the right aquaculture products. Could you tell me more about your specific needs? Are you looking for pricing, product details, or would you like to speak with our sales team?";
+        response = generateGeneralResponse();
+        quickReplies = ['Product catalog', 'Price list', 'Farm tour', 'Contact sales'];
       }
 
       const aiMessage: Message = {
@@ -132,19 +184,201 @@ export function AIChatWidget() {
         sender: 'ai',
         timestamp: new Date(),
         productRecommendation,
-        action
+        action,
+        quickReplies
       };
 
       setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
 
-      // If action is to collect contact, set the state
       if (action === 'collect-contact') {
         setCollectingContact(true);
       }
-    }, 1500);
+    }, 1200 + Math.random() * 800); // Variable typing delay for natural feel
   };
 
+  // Enhanced context detection
+  const updateConversationContext = (message: string) => {
+    const newContext = { ...conversationContext };
+    
+    // Detect interest
+    if (message.includes('farm') || message.includes('start') || message.includes('beginner')) {
+      newContext.interest = 'farming';
+    } else if (message.includes('restaurant') || message.includes('resale') || message.includes('business')) {
+      newContext.interest = 'business';
+    } else if (message.includes('export') || message.includes('international') || message.includes('ship')) {
+      newContext.interest = 'export';
+    } else if (message.includes('personal') || message.includes('family') || message.includes('consume')) {
+      newContext.interest = 'personal';
+    }
+
+    // Detect budget
+    if (message.includes('cheap') || message.includes('low') || message.includes('small')) {
+      newContext.budget = 'low';
+    } else if (message.includes('medium') || message.includes('standard')) {
+      newContext.budget = 'medium';
+    } else if (message.includes('premium') || message.includes('high') || message.includes('large')) {
+      newContext.budget = 'high';
+    }
+
+    // Detect experience
+    if (message.includes('new') || message.includes('beginner') || message.includes('first time')) {
+      newContext.experience = 'beginner';
+    } else if (message.includes('experience') || message.includes('before') || message.includes('existing')) {
+      newContext.experience = 'intermediate';
+    } else if (message.includes('expert') || message.includes('professional') || message.includes('commercial')) {
+      newContext.experience = 'expert';
+    }
+
+    // Detect timeline
+    if (message.includes('now') || message.includes('immediate') || message.includes('urgent')) {
+      newContext.timeline = 'immediate';
+    } else if (message.includes('week') || message.includes('soon')) {
+      newContext.timeline = '1-2 weeks';
+    } else if (message.includes('month') || message.includes('plan') || message.includes('future')) {
+      newContext.timeline = '1-3 months';
+    }
+
+    setConversationContext(newContext);
+  };
+
+  // Enhanced response generators
+  const isSalesTrigger = (message: string): boolean => 
+    /(sales|representative|agent|person|call|meet|discuss)/.test(message);
+
+  const isPricingTrigger = (message: string): boolean =>
+    /(price|cost|quote|pricing|how much|budget)/.test(message);
+
+  const isProductInquiry = (message: string): boolean =>
+    /(fingerling|juvenile|smoked|live|export|tilapia|catfish)/.test(message);
+
+  const isFarmingInterest = (message: string): boolean =>
+    /(farm|pond|start|beginner|aquaculture|grow)/.test(message);
+
+  const isExportInterest = (message: string): boolean =>
+    /(export|international|ship|overseas|europe|usa|uk)/.test(message);
+
+  const generateSalesResponse = (): string => {
+    return `Excellent! I'd love to connect you with our aquaculture experts. Our sales team can provide:
+
+• 📊 Custom pricing based on your quantity
+• 🚚 Delivery options and timelines
+• 📝 Contract farming opportunities
+• 🌟 Special bulk discounts
+• 📋 Export documentation support
+
+May I get your contact details so our specialist can reach out with personalized assistance?`;
+  };
+
+  const generatePricingResponse = (): string => {
+    const { interest, budget } = conversationContext;
+    
+    let baseResponse = "I can help you with pricing! Our products range from affordable starter packs to premium export quality.\n\n";
+    
+    if (interest === 'farming') {
+      baseResponse += "**For fish farming:**\n• Fingerlings: ₦25-₦30 per piece\n• Juveniles: ₦300-₦350 per piece\n• Complete farm setup consultation available\n\n";
+    } else if (interest === 'business') {
+      baseResponse += "**For business/resale:**\n• Live fish: ₦1,200-₦1,500 per kg\n• Smoked fish: ₦2,500-₦3,000 per kg\n• Bulk discounts available\n\n";
+    }
+    
+    baseResponse += "What's your approximate budget range? This helps me provide the most relevant options.";
+    
+    return baseResponse;
+  };
+
+  const generateProductResponse = (message: string): { response: string; recommendation: keyof typeof products } => {
+    let recommendation: keyof typeof products = 'table-size';
+    let response = '';
+
+    if (message.includes('fingerling')) {
+      recommendation = 'fingerlings';
+      response = `Perfect choice! Our **Premium Fingerlings** are ideal for starting your fish farm:\n\n`;
+    } else if (message.includes('juvenile')) {
+      recommendation = 'juveniles';
+      response = `Great selection! Our **Juvenile Fish** are perfect for growers:\n\n`;
+    } else if (message.includes('smoked')) {
+      recommendation = 'smoked';
+      response = `Excellent! Our **Premium Smoked Fish** are perfect for export and local markets:\n\n`;
+    } else if (message.includes('export')) {
+      recommendation = message.includes('tilapia') ? 'export-tilapia' : 'export-catfish';
+      response = `Outstanding! Our **Export-Grade ${message.includes('tilapia') ? 'Tilapia' : 'Catfish'}** meet international standards:\n\n`;
+    } else {
+      recommendation = 'table-size';
+      response = `Wonderful! Our **Table-Size Live Fish** are perfect for immediate use:\n\n`;
+    }
+
+    const product = products[recommendation];
+    response += `**${product.name}**\n${product.description}\n\n💵 **Price:** ${product.price}\n📦 **Min Order:** ${product.minOrder}\n🎯 **Best For:** ${product.bestFor}\n🚚 **Delivery:** ${product.delivery}`;
+
+    return { response, recommendation };
+  };
+
+  const generateFarmingResponse = (): string => {
+    return `🐟 **Fish Farming Made Easy!**
+
+Starting a fish farm is an excellent investment! Here's what you need:
+
+**For Beginners:**
+1. Start with 5,000 fingerlings (₦125,000 - ₦150,000)
+2. Pond setup consultation available
+3. 4-6 month growth cycle
+4. Potential ROI: 40-60%
+
+**We Provide:**
+• Quality fingerlings & juveniles
+• Technical training & support
+• Feed recommendations
+• Market access assistance
+
+Would you like specific details about fingerlings, farm setup costs, or market potential?`;
+  };
+
+  const generateExportResponse = (): string => {
+    return `🌍 **International Export Excellence**
+
+We specialize in helping Nigerian fish farmers access global markets:
+
+**Our Export Capabilities:**
+• FDA & EU compliance certification
+• HACCP & BAP certified processing
+• Cold chain logistics
+• Full export documentation
+• FOB/CIF shipping terms
+
+**Key Markets:**
+• United States • United Kingdom • European Union • Middle East
+
+**Popular Export Products:**
+• Smoked Catfish & Tilapia
+• IQF Fish Fillets
+• Whole Frozen Fish
+• Custom processed products
+
+Would you like information about specific export requirements, documentation, or shipping costs?`;
+  };
+
+  const generateGeneralResponse = (): string => {
+    return `Thank you for your interest in Fish Supreme Integrated Farm! 🌟
+
+We're one of Nigeria's leading aquaculture companies with:
+• 🏆 15+ years industry experience
+• 🌱 Sustainable farming practices
+• 🚚 Nationwide delivery
+• 🌍 International export capabilities
+• 💰 Competitive pricing
+• 📚 Comprehensive support
+
+How can I assist you today? You can ask about:
+• Specific products and pricing
+• Starting a fish farm
+• Export requirements
+• Bulk order discounts
+• Delivery options
+
+Or I can connect you with our expert team for personalized assistance!`;
+  };
+
+  // Enhanced message handling
   const handleSendMessage = () => {
     if (inputMessage.trim() === '') return;
 
@@ -172,63 +406,124 @@ export function AIChatWidget() {
     setTimeout(() => handleSendMessage(), 100);
   };
 
+  const handleQuickReply = (reply: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: reply,
+      sender: 'user',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    simulateAIResponse(reply);
+  };
+
+  // Enhanced contact handling with validation
   const handleContactSubmit = () => {
-    if (contactInfo.name && (contactInfo.email || contactInfo.phone)) {
-      // In a real app, you would send this to your backend
-      console.log('Contact info collected:', contactInfo);
+    if (validateContactInfo()) {
+      // Simulate API call to backend
+      console.log('Contact info submitted:', contactInfo);
       
       const thankYouMessage: Message = {
         id: Date.now().toString(),
-        content: `Thank you ${contactInfo.name}! Our sales team will contact you within 24 hours at ${contactInfo.email || contactInfo.phone}. In the meantime, is there anything else I can help you with?`,
+        content: `✅ **Thank you ${contactInfo.name}!**\n\nOur sales team will contact you within 24 hours at ${contactInfo.phone || contactInfo.email}.\n\nWe'll discuss:\n• ${contactInfo.business || 'Your fish product needs'}\n• Custom pricing options\n• Delivery arrangements\n• Any technical support needed\n\nIn the meantime, feel free to ask me any other questions!`,
         sender: 'ai',
-        timestamp: new Date()
+        timestamp: new Date(),
+        quickReplies: ['Product catalog', 'Farm location', 'Visit website', 'Chat more']
       };
 
       setMessages(prev => [...prev, thankYouMessage]);
       setCollectingContact(false);
-      setContactInfo({ name: '', email: '', phone: '' });
+      setContactInfo({ name: '', email: '', phone: '', business: '' });
 
-      // Simulate sending to sales team (in real app, use API)
-      setTimeout(() => {
-        // This would be your API call
-        fetch('/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...contactInfo,
-            source: 'AI Chat',
-            timestamp: new Date().toISOString()
-          })
-        }).catch(console.error);
-      }, 1000);
+      // In real implementation, send to your backend
+      fetch('/api/contact-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...contactInfo,
+          source: 'AI Chat Widget',
+          context: conversationContext,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(console.error);
     }
   };
 
+  const validateContactInfo = (): boolean => {
+    return contactInfo.name.trim() !== '' && 
+           (contactInfo.email.trim() !== '' || contactInfo.phone.trim() !== '') &&
+           contactInfo.phone.trim().length >= 10;
+  };
+
+  // Enhanced navigation handlers
   const redirectToContact = () => {
     setIsOpen(false);
-    router.push('/contact');
+    setTimeout(() => router.push('/contact'), 300);
+  };
+
+  const redirectToProducts = () => {
+    setIsOpen(false);
+    setTimeout(() => router.push('/products'), 300);
   };
 
   const redirectToWhatsApp = () => {
-    const message = "Hello! I'm interested in Fish Supreme products and would like to speak with a sales representative.";
-    const whatsappUrl = `https://wa.me/234YOURNUMBER?text=${encodeURIComponent(message)}`;
+    const contextMessage = conversationContext.interest ? 
+      `I'm interested in ${conversationContext.interest} and would like to speak with a sales representative.` :
+      "I'm interested in Fish Supreme products and would like to speak with a sales representative.";
+    
+    const whatsappUrl = `https://wa.me/2348123456789?text=${encodeURIComponent(contextMessage)}`;
     window.open(whatsappUrl, '_blank');
   };
 
+  // Enhanced product display component
   const getProductInfo = (productKey: keyof typeof products) => {
     const product = products[productKey];
     return (
-      <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mt-3">
-        <h4 className="font-semibold text-primary-900 mb-2">{product.name}</h4>
-        <p className="text-sm text-primary-700 mb-2">{product.description}</p>
-        <div className="text-xs text-primary-600 space-y-1">
-          <div>Minimum Order: {product.minOrder}</div>
-          <div>Best For: {product.bestFor}</div>
+      <div className="bg-gradient-to-br from-primary-50 to-aquatic-50 border border-primary-200 rounded-xl p-4 mt-3 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h4 className="font-bold text-primary-900 mb-1">{product.name}</h4>
+            <p className="text-sm text-primary-700 mb-3">{product.description}</p>
+            
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center">
+                <span className="text-primary-600 font-semibold mr-1">💰</span>
+                <span>{product.price}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-primary-600 font-semibold mr-1">📦</span>
+                <span>{product.minOrder}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-primary-600 font-semibold mr-1">🎯</span>
+                <span>{product.bestFor}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-primary-600 font-semibold mr-1">🚚</span>
+                <span>{product.delivery}</span>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <h5 className="text-xs font-semibold text-primary-800 mb-1">Key Features:</h5>
+              <div className="flex flex-wrap gap-1">
+                {product.features.map((feature, index) => (
+                  <span 
+                    key={index}
+                    className="inline-block bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs"
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
+  // Enhanced message actions
   const renderMessageActions = (message: Message) => {
     if (!message.action) return null;
 
@@ -238,24 +533,24 @@ export function AIChatWidget() {
           <div className="mt-3 space-y-2">
             <button
               onClick={() => setCollectingContact(true)}
-              className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+              className="w-full bg-gradient-to-r from-primary-600 to-aquatic-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:from-primary-700 hover:to-aquatic-700 transition-all shadow-md"
             >
-              Share My Contact Info
+              📞 Share My Contact Info
             </button>
             <button
               onClick={redirectToContact}
               className="w-full border border-primary-600 text-primary-600 py-2 px-4 rounded-lg text-sm font-semibold hover:bg-primary-50 transition-colors"
             >
-              Visit Contact Page
+              👥 Visit Contact Page
             </button>
             <button
               onClick={redirectToWhatsApp}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
+              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center shadow-md"
             >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893-.001-3.189-1.26-6.189-3.548-8.452"/>
               </svg>
-              Chat on WhatsApp
+              WhatsApp Instant Chat
             </button>
           </div>
         );
@@ -265,49 +560,73 @@ export function AIChatWidget() {
     }
   };
 
+  // Quick replies component
+  const renderQuickReplies = (quickReplies: string[]) => {
+    return (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {quickReplies.map((reply, index) => (
+          <button
+            key={index}
+            onClick={() => handleQuickReply(reply)}
+            className="bg-white border border-primary-200 text-primary-700 px-3 py-2 rounded-full text-sm hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            {reply}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
-      {/* Chat Button */}
+      {/* Enhanced Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 hover:scale-110 z-40 group"
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-aquatic-600 text-white p-4 rounded-full shadow-2xl hover:from-primary-700 hover:to-aquatic-700 transition-all duration-300 hover:scale-110 z-40 group animate-bounce hover:animate-none"
         aria-label="Chat with Supreme Selector AI"
       >
         <div className="relative">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
         </div>
-        <div className="absolute bottom-full right-0 mb-2 w-48 bg-gray-900 text-white text-sm rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          Chat with Supreme Selector AI
+        <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-sm rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-xl">
+          <div className="font-semibold">Supreme Selector AI</div>
+          <div className="text-gray-300">Get instant fish farming advice!</div>
           <div className="absolute top-full right-4 border-4 border-transparent border-t-gray-900"></div>
         </div>
       </button>
 
-      {/* Chat Modal */}
+      {/* Enhanced Chat Modal */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col">
-          {/* Header */}
+        <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col transform transition-all duration-300 scale-100">
+          {/* Enhanced Header */}
           <div className="bg-gradient-to-r from-primary-600 to-aquatic-600 text-white p-4 rounded-t-2xl">
             <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold">Supreme Selector AI</h3>
-                <p className="text-primary-100 text-sm">Your aquaculture expert</p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-lg">🎣</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white">Supreme Selector AI</h3>
+                  <p className="text-primary-100 text-sm">Your Aquaculture Expert • Online</p>
+                </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:text-gray-200 transition-colors"
+                className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Chat Messages */}
-          <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+          {/* Enhanced Chat Messages */}
+          <div className="flex-1 p-4 bg-gradient-to-b from-gray-50 to-white overflow-y-auto">
             <div className="space-y-4">
               {messages.map((message) => (
                 <div
@@ -315,15 +634,16 @@ export function AIChatWidget() {
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-3 ${
+                    className={`max-w-[85%] rounded-2xl p-4 ${
                       message.sender === 'user'
-                        ? 'bg-primary-600 text-white rounded-br-none'
-                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
+                        ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-br-none shadow-md'
+                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
                     {message.productRecommendation && getProductInfo(message.productRecommendation)}
                     {renderMessageActions(message)}
+                    {message.quickReplies && renderQuickReplies(message.quickReplies)}
                     <div className={`text-xs mt-2 ${message.sender === 'user' ? 'text-primary-200' : 'text-gray-500'}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -333,11 +653,14 @@ export function AIChatWidget() {
               
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 shadow-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                      <span className="text-xs text-gray-500">Supreme Selector is typing...</span>
                     </div>
                   </div>
                 </div>
@@ -347,39 +670,49 @@ export function AIChatWidget() {
             </div>
           </div>
 
-          {/* Contact Form */}
+          {/* Enhanced Contact Form */}
           {collectingContact && (
-            <div className="p-4 border-t border-gray-200 bg-primary-50">
+            <div className="p-4 border-t border-gray-200 bg-gradient-to-b from-primary-50 to-white">
               <div className="space-y-3">
-                <h4 className="font-semibold text-primary-900 text-sm">Share your contact details:</h4>
+                <h4 className="font-bold text-primary-900 text-sm flex items-center">
+                  <span className="mr-2">📞</span>
+                  Connect with Our Experts
+                </h4>
                 <input
                   type="text"
-                  placeholder="Your Name *"
+                  placeholder="Your Full Name *"
                   value={contactInfo.name}
                   onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 />
                 <input
                   type="email"
                   placeholder="Email Address"
                   value={contactInfo.email}
                   onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 />
                 <input
                   type="tel"
                   placeholder="Phone Number *"
                   value={contactInfo.phone}
                   onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                />
+                <input
+                  type="text"
+                  placeholder="Your Business/Interest"
+                  value={contactInfo.business}
+                  onChange={(e) => setContactInfo(prev => ({ ...prev, business: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 />
                 <div className="flex space-x-2">
                   <button
                     onClick={handleContactSubmit}
-                    disabled={!contactInfo.name || (!contactInfo.email && !contactInfo.phone)}
-                    className="flex-1 bg-primary-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!validateContactInfo()}
+                    className="flex-1 bg-gradient-to-r from-primary-600 to-aquatic-600 text-white py-2 rounded-lg text-sm font-semibold hover:from-primary-700 hover:to-aquatic-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit to Sales Team
+                    ✅ Submit to Sales Team
                   </button>
                   <button
                     onClick={() => setCollectingContact(false)}
@@ -392,20 +725,23 @@ export function AIChatWidget() {
             </div>
           )}
 
-          {/* Quick Actions */}
+          {/* Enhanced Quick Actions */}
           {messages.length <= 1 && !collectingContact && (
-            <div className="px-4 pt-2 bg-gray-50 border-t border-gray-200">
+            <div className="px-4 pt-3 bg-gray-50 border-t border-gray-200">
+              <p className="text-xs text-gray-600 mb-2 font-semibold">Quick start:</p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  'Start fish farm',
-                  'Buy for restaurant',
-                  'Export to USA',
-                  'Personal use'
+                  '🐟 Start Fish Farm',
+                  '🏪 Buy for Business',
+                  '🌍 Export Products',
+                  '💰 Get Price Quotes',
+                  '📚 Farm Training',
+                  '🚚 Delivery Info'
                 ].map((action) => (
                   <button
                     key={action}
                     onClick={() => handleQuickAction(action)}
-                    className="bg-white border border-primary-200 text-primary-700 px-3 py-1 rounded-full text-xs hover:bg-primary-50 transition-colors"
+                    className="bg-white border border-primary-200 text-primary-700 px-3 py-2 rounded-full text-xs hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     {action}
                   </button>
@@ -414,7 +750,7 @@ export function AIChatWidget() {
             </div>
           )}
 
-          {/* Input Area */}
+          {/* Enhanced Input Area */}
           {!collectingContact && (
             <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
               <div className="flex space-x-2">
@@ -423,20 +759,23 @@ export function AIChatWidget() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                  placeholder="Ask about fish farming, products, pricing..."
+                  className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                   disabled={isTyping}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={isTyping || inputMessage.trim() === ''}
-                  className="bg-primary-600 text-white p-2 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-primary-600 to-aquatic-600 text-white p-3 rounded-xl hover:from-primary-700 hover:to-aquatic-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
                 </button>
               </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Powered by Fish Supreme AI • Your aquaculture expert
+              </p>
             </div>
           )}
         </div>
