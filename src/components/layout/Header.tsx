@@ -3,16 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useCart } from '@/contexts/CartContext'; // Add this import
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { state } = useCart(); // Add this hook
 
-  // Stable navigation items array
+  // Updated navigation items array with Farm Tour
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Products', href: '/products' },
+    { name: 'Farm Tour', href: '/farm-tour' },
     { name: 'Export', href: '/export' },
+    { name: 'Track Order', href: '/track-order' },
     { name: 'Contact', href: '/contact' },
   ];
 
@@ -45,6 +49,20 @@ export function Header() {
                 {item.name}
               </Link>
             ))}
+            {/* Add Cart Icon to Desktop Navigation */}
+            <Link
+              href="/cart"
+              className="relative p-2 text-gray-700 hover:text-primary-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {state.itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {state.itemCount}
+                </span>
+              )}
+            </Link>
             <Link
               href="/contact"
               className="px-4 py-2 rounded-full font-semibold transition-all hover:shadow-lg text-sm bg-primary-600 text-white hover:bg-primary-700 border border-primary-500"
@@ -83,6 +101,17 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
+              {/* Add Cart to Mobile Navigation */}
+              <Link
+                href="/cart"
+                className="flex items-center text-gray-700 hover:text-primary-600 font-medium py-2 transition-colors text-sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Cart {state.itemCount > 0 && `(${state.itemCount})`}
+              </Link>
               <Link
                 href="/contact"
                 className="block bg-primary-600 text-white text-center px-4 py-2 rounded-full font-semibold hover:bg-primary-700 transition-colors mt-3 text-sm"
