@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { useCart } from '@/contexts/CartContext';
 
 // Updated products data focusing on catfish with correct pricing
 const products = [
@@ -96,9 +97,23 @@ const products = [
 
 export default function ProductsPage() {
   const [imageErrors, setImageErrors] = useState<{[key: string]: boolean}>({});
+  const { dispatch } = useCart();
 
   const handleImageError = (productId: string) => {
     setImageErrors(prev => ({ ...prev, [productId]: true }));
+  };
+
+  const handleAddToCart = (product: any) => {
+    dispatch({ 
+      type: 'ADD_ITEM', 
+      payload: {
+        ...product,
+        quantity: 1
+      }
+    });
+    
+    // Show success message
+    alert(`${product.name} added to cart! Continue shopping or proceed to checkout.`);
   };
 
   const handleInquire = (product: any) => {
@@ -127,9 +142,9 @@ export default function ProductsPage() {
       <Header />
       
       <div className="pt-24">
-        {/* Enhanced Hero Section with Background Image */}
+        {/* Enhanced Hero Section with More Visible Background */}
         <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-          {/* Background Image */}
+          {/* Background Image with Lighter Overlay */}
           <div className="absolute inset-0">
             <Image
               src="/images/products/hero-background.jpg"
@@ -138,20 +153,24 @@ export default function ProductsPage() {
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-900/85 via-primary-800/75 to-aquatic-600/80"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-700/20 to-primary-900/0"></div>
+            {/* Lighter gradient overlay to show more background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-900/60 via-primary-800/50 to-aquatic-600/60"></div>
+            {/* Reduced radial gradient */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-700/15 to-primary-900/0"></div>
+            {/* Additional light overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/15"></div>
           </div>
           
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-8">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/25 backdrop-blur-sm border border-white/35 mb-8 shadow-2xl">
               <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              <span className="text-white text-sm font-semibold tracking-wide">Premium Aquaculture Products</span>
+              <span className="text-white text-sm font-semibold tracking-wide drop-shadow-lg">Premium Aquaculture Products</span>
             </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-2xl">
               Supreme Catfish
-              <span className="block text-aquatic-300 bg-gradient-to-r from-aquatic-300 to-green-300 bg-clip-text text-transparent">Products</span>
+              <span className="block text-aquatic-200 bg-gradient-to-r from-aquatic-200 to-green-200 bg-clip-text text-transparent drop-shadow-2xl">Products</span>
             </h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-10 leading-relaxed text-white/95">
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-10 leading-relaxed text-white drop-shadow-2xl">
               From premium fingerlings to export-grade smoked products - delivering excellence at every stage of the aquaculture journey
             </p>
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
@@ -166,7 +185,7 @@ export default function ProductsPage() {
               </Link>
               <Link
                 href="/contact"
-                className="border-2 border-white text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center space-x-3"
+                className="border-2 border-white text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center space-x-3 bg-white/10"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
@@ -176,11 +195,17 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <div className="w-8 h-12 border-2 border-white/60 rounded-full flex justify-center backdrop-blur-sm">
-              <div className="w-1 h-3 bg-white/70 rounded-full mt-3"></div>
-            </div>
+          {/* Cart Quick Access - Replaced the bouncing scroll indicator */}
+          <div className="absolute bottom-8 right-8">
+            <Link
+              href="/cart"
+              className="group bg-white/20 backdrop-blur-sm border border-white/30 text-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 shadow-2xl flex items-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span>View Cart</span>
+            </Link>
           </div>
         </section>
 
@@ -306,12 +331,15 @@ export default function ProductsPage() {
                         📞 Contact for pricing
                       </div>
                       <div className="flex gap-3">
-                        <Link
-                          href={`/contact?product=${product.id}`}
-                          className="bg-gray-100 text-gray-700 px-5 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300 hover:scale-105 text-sm border border-gray-300"
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          className="bg-primary-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 hover:scale-105 text-sm border border-primary-600 flex items-center space-x-2"
                         >
-                          Get Detailed Quote
-                        </Link>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span>Add to Cart</span>
+                        </button>
                         <button
                           onClick={() => handleInquire(product)}
                           className="bg-gradient-to-r from-primary-600 to-aquatic-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-aquatic-700 transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm flex items-center space-x-2"
@@ -432,12 +460,20 @@ export default function ProductsPage() {
                     Contact us for customized pricing based on your order volume and delivery location
                   </p>
                 </div>
-                <Link
-                  href="/contact"
-                  className="inline-block bg-primary-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-primary-700 transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-lg"
-                >
-                  Request Custom Quote
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link
+                    href="/contact"
+                    className="inline-block bg-primary-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-primary-700 transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-lg"
+                  >
+                    Request Custom Quote
+                  </Link>
+                  <Link
+                    href="/cart"
+                    className="inline-block border-2 border-primary-600 text-primary-600 px-10 py-4 rounded-full font-bold text-lg hover:bg-primary-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  >
+                    View Cart & Checkout
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -467,15 +503,15 @@ export default function ProductsPage() {
                 </svg>
                 <span>Contact Sales Team</span>
               </Link>
-              <a
-                href="tel:+2348123456789"
+              <Link
+                href="/cart"
                 className="border-2 border-white text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center justify-center space-x-3"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span>Call: +234 812 345 6789</span>
-              </a>
+                <span>Proceed to Cart</span>
+              </Link>
             </div>
             <p className="text-white/70 mt-8 text-lg">
               📧 Email: orders@fishsupremefarm.com
