@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    domains: [],
+    formats: ['image/webp', 'image/avif'],
+  },
   experimental: {
-    turbo: {
-      rules: {
-        '*.css': {
-          loaders: ['postcss'],
-        },
-      },
-    },
+    optimizeCss: true,
   },
 }
 

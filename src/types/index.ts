@@ -13,6 +13,9 @@ export interface Product {
     shelfLife?: string;
     packaging?: string;
   };
+  // Add the new properties for cuts and weight options
+  cuts?: string[];
+  weightOptions?: { weight: string; price: number }[];
 }
 
 // ✅ Added missing OrderProduct interface
@@ -34,10 +37,7 @@ export interface Order {
   trackingNumber?: string;
   shippingAddress: string;
   totalAmount: number;
-
-  // ✅ If this will be stored in DB or passed via API:
-  // Prefer string ISO format to avoid serialization issues
-  createdAt: string; // or: string | Date;
+  createdAt: string;
 }
 
 export interface AIConversation {
@@ -50,7 +50,22 @@ export interface AIConversation {
 export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;
+  timestamp: string;
+}
 
-  // Same recommendation: use ISO string if sending to API
-  timestamp: string; // or: string | Date;
+// ✅ Add FarmSection interface for the farm facilities
+export interface FarmSection {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  capacity: string;
+}
+
+// ✅ Update CartItem to include selected cuts and weights
+export interface CartItem {
+  product: Product;
+  quantity: number;
+  selectedCut?: string;
+  selectedWeight?: string;
 }
