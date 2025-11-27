@@ -1,22 +1,9 @@
 'use client';
 
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '../../contexts/CartContext'; // Fixed import path
 import Image from 'next/image';
 import { useState } from 'react';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  unit: string;
-  inStock: boolean;
-  minimumOrder: number;
-  cuts?: string[];
-  weightOptions?: { weight: string; price: number }[];
-}
+import { Product } from '@/types/product';
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +13,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { dispatch } = useCart();
   const [selectedCut, setSelectedCut] = useState<string>(product.cuts?.[0] || '');
   const [selectedWeight, setSelectedWeight] = useState<string>(product.weightOptions?.[0]?.weight || '');
+  const [imageError, setImageError] = useState(false);
 
   const handleAddToCart = () => {
     // Calculate final price based on selected weight option
@@ -38,12 +26,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
 
     // Create the product object to add to cart
-    const productToAdd = {
+    const productToAdd: Product = {
       ...product,
       price: finalPrice,
-      // Include selected options if available
-      ...(selectedCut && { selectedCut }),
-      ...(selectedWeight && { selectedWeight })
+      // Ensure category is included as it's required by Product type
+      category: product.category || 'uncategorized'
     };
 
     dispatch({ 
@@ -67,27 +54,36 @@ export default function ProductCard({ product }: ProductCardProps) {
     return product.price;
   };
 
+  const getMinOrderDisplay = () => {
+    return `${product.minOrderQuantity || 1} ${product.unit || 'unit'}`;
+  };
+
+  // Check if product is in stock (default to true if not specified)
+  const isInStock = product.inStock !== false;
+
+  // Fixed image error handler for Next.js Image
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-w-16 aspect-h-12 bg-gray-200">
-        {/* Use actual product image */}
         <div className="w-full h-48 relative">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              // Fallback if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-          {/* Fallback if image doesn't load */}
-          <div className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center absolute inset-0">
-            <span className="text-primary-600 font-semibold">{product.name}</span>
-          </div>
+          {!imageError ? (
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={handleImageError}
+            />
+          ) : (
+            <div className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+              <span className="text-primary-600 font-semibold text-center px-2">{product.name}</span>
+            </div>
+          )}
         </div>
       </div>
       
@@ -135,15 +131,16 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         
-        {/* Display all weight options as reference */}
-        {product.weightOptions && product.weightOptions.length > 0 && (
+        {/* Specifications */}
+        {product.specifications && (
           <div className="mb-3">
-            <p className="text-sm text-gray-600 font-medium mb-1">Available Options:</p>
-            {product.weightOptions.map((option, index) => (
-              <p key={index} className="text-xs text-gray-500">
-                {option.weight}: {formatPrice(option.price)}
-              </p>
-            ))}
+            <p className="text-sm text-gray-600 font-medium mb-1">Specifications:</p>
+            <div className="text-xs text-gray-500 space-y-1">
+              <p>Size: {product.specifications.size}</p>
+              <p>Grade: {product.specifications.grade}</p>
+              <p>Shelf Life: {product.specifications.shelfLife}</p>
+              <p>Packaging: {product.specifications.packaging}</p>
+            </div>
           </div>
         )}
         
@@ -152,14 +149,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             {formatPrice(getCurrentPrice())}
           </span>
           <span className="text-sm text-gray-500">
-            {selectedWeight && product.weightOptions ? '' : `per ${product.unit}`}
+            {selectedWeight && product.weightOptions ? '' : `per ${product.unit || 'unit'}`}
           </span>
         </div>
         
         <div className="text-sm text-gray-600 mb-4">
-          <p>Minimum order: {product.minimumOrder.toLocaleString()} {product.unit}</p>
-          <p className={product.inStock ? 'text-green-600' : 'text-red-600'}>
-            {product.inStock ? 'In Stock' : 'Out of Stock'}
+          <p>Minimum order: {getMinOrderDisplay()}</p>
+          <p className={isInStock ? 'text-green-600' : 'text-red-600'}>
+            {isInStock ? 'In Stock' : 'Out of Stock'}
           </p>
           {selectedCut && (
             <p className="text-primary-600 font-medium">Selected: {selectedCut}</p>
@@ -168,10 +165,10 @@ export default function ProductCard({ product }: ProductCardProps) {
         
         <button
           onClick={handleAddToCart}
-          disabled={!product.inStock}
+          disabled={!isInStock}
           className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
         >
-          {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+          {isInStock ? 'Add to Cart' : 'Out of Stock'}
         </button>
       </div>
     </div>

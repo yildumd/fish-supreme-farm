@@ -6,11 +6,23 @@ export interface Product {
   image: string;
   category: string;
   unit: string;
-  inStock: boolean;
-  minimumOrder: number;
+  inStock?: boolean;
+  minOrderQuantity: number;
+  popular?: boolean;
+  delivery?: string;
+  features?: string[];
+  cuts?: string[];
+  weightOptions?: { weight: string; price: number }[];
+  specifications?: {
+    size: string;
+    grade: string;
+    shelfLife: string;
+    packaging: string;
+  };
 }
 
-export interface CartItem {
+export interface ProductCardProps {
   product: Product;
-  quantity: number;
+  className?: string;
+  onAddToCart?: (product: Product) => void;
 }
