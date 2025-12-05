@@ -1,6 +1,6 @@
 'use client';
 
-import { useCart } from '../../contexts/CartContext'; // Fixed import path
+import { useCart } from '@/contexts/CartContext'; // Fixed import path
 import Image from 'next/image';
 import { useState } from 'react';
 import { Product } from '@/types/product';
@@ -25,24 +25,29 @@ export default function ProductCard({ product }: ProductCardProps) {
       }
     }
 
-    // Create the product object to add to cart
-    const productToAdd: Product = {
-      ...product,
+    // Create the cart item object with correct structure
+    const cartItem = {
+      id: product.id.toString(), // Ensure id is string
+      name: product.name,
       price: finalPrice,
-      // Ensure category is included as it's required by Product type
-      category: product.category || 'uncategorized'
+      quantity: product.minOrderQuantity || 1,
+      unit: product.unit || 'kg', // Default to kg
+      minOrderQuantity: product.minOrderQuantity || 1,
+      image: product.image
     };
 
     dispatch({ 
       type: 'ADD_ITEM', 
-      payload: productToAdd 
+      payload: cartItem 
     });
   };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: 'NGN'
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price);
   };
 

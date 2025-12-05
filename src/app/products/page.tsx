@@ -1,3 +1,4 @@
+// src/app/products/page.tsx - IMPROVED VERSION
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/contexts/CartContext';
 
-// Updated products data focusing on catfish with correct pricing
+// Updated products data with consistent structure
 const products = [
   {
     id: 'catfish-fingerlings',
@@ -16,12 +17,19 @@ const products = [
     description: 'Premium quality catfish fingerlings for fish farmers. Healthy, disease-resistant, and fast-growing with excellent survival rates.',
     features: ['Disease-resistant strains', 'Fast growth rate', 'High survival rate', 'Acclimated to local conditions', 'Vaccinated when required'],
     minOrder: '5,000 pieces',
+    minOrderQuantity: 5000,
     price: 25, // price per piece
     unit: 'piece',
     image: '/images/products/fingerlings.jpg',
     inStock: true,
     popular: true,
-    delivery: '2-3 days'
+    delivery: '2-3 days',
+    specifications: {
+      size: '1-2 inches',
+      grade: 'Premium A',
+      shelfLife: 'Live product',
+      packaging: 'Oxygenated bags'
+    }
   },
   {
     id: 'catfish-juveniles',
@@ -30,12 +38,19 @@ const products = [
     description: 'Healthy juvenile catfish ready for grow-out ponds. Perfect for expanding your fish farming operation with uniform sizing.',
     features: ['4-6 weeks old', 'Pond-acclimated', 'Vaccinated when required', 'Uniform size grading', 'Ready for grow-out'],
     minOrder: '1,000 pieces',
+    minOrderQuantity: 1000,
     price: 300, // price per piece
     unit: 'piece',
     image: '/images/products/juveniles.jpg',
     inStock: true,
     popular: false,
-    delivery: '2-3 days'
+    delivery: '2-3 days',
+    specifications: {
+      size: '4-6 inches',
+      grade: 'Premium A',
+      shelfLife: 'Live product',
+      packaging: 'Oxygenated bags'
+    }
   },
   {
     id: 'table-size-catfish',
@@ -44,12 +59,19 @@ const products = [
     description: 'Fresh, live catfish ready for market and consumption. Perfect for restaurants, hotels, and local markets across Nigeria.',
     features: ['300-500g average weight', 'Daily fresh harvest', 'Nationwide delivery', 'Competitive pricing', 'Freshness guaranteed'],
     minOrder: '50kg',
+    minOrderQuantity: 50,
     price: 4000, // N4,000 per kg as specified
     unit: 'kg',
     image: '/images/products/table-size.jpg',
     inStock: true,
     popular: true,
-    delivery: '1-2 days'
+    delivery: '1-2 days',
+    specifications: {
+      size: '300-500g',
+      grade: 'Grade A',
+      shelfLife: 'Live product',
+      packaging: 'Live fish containers'
+    }
   },
   {
     id: 'smoked-catfish-mid-cuts',
@@ -58,12 +80,19 @@ const products = [
     description: 'Premium smoked catfish mid cuts. Traditionally smoked with modern hygiene standards for exceptional flavor and long shelf life.',
     features: ['Vacuum-packed', '6-month shelf life', 'Hygienic processing', 'Rich traditional flavor', 'Export ready packaging'],
     minOrder: '20kg',
+    minOrderQuantity: 20,
     price: 15000, // N15,000 per kg as specified
     unit: 'kg',
     image: '/images/products/smoked-mid-cuts.jpg',
     inStock: true,
     popular: true,
-    delivery: '3-5 days'
+    delivery: '3-5 days',
+    specifications: {
+      size: 'Mid cuts',
+      grade: 'Export Grade',
+      shelfLife: '6 months',
+      packaging: 'Vacuum packs'
+    }
   },
   {
     id: 'smoked-catfish-whole',
@@ -72,12 +101,19 @@ const products = [
     description: 'Whole smoked catfish, perfect for export and premium markets. Maintains natural flavor and texture with artisanal smoking techniques.',
     features: ['Whole fish presentation', 'Export-grade quality', 'Traditional smoking', 'Premium packaging', 'International standards'],
     minOrder: '20kg',
+    minOrderQuantity: 20,
     price: 15000, // N15,000 per kg as specified
     unit: 'kg',
     image: '/images/products/smoked-whole.jpg',
     inStock: true,
     popular: false,
-    delivery: '3-5 days'
+    delivery: '3-5 days',
+    specifications: {
+      size: 'Whole fish',
+      grade: 'Export Grade',
+      shelfLife: '6 months',
+      packaging: 'Individual packs'
+    }
   },
   {
     id: 'catfish-export-grade',
@@ -86,39 +122,62 @@ const products = [
     description: 'Premium catfish meeting international export standards. Processed and packaged for global markets with full traceability.',
     features: ['FDA & EU compliant', 'IQF processing', 'HACCP certified', 'Global shipping', 'Full traceability'],
     minOrder: '100kg',
+    minOrderQuantity: 100,
     price: 18000, // Adjusted export price
     unit: 'kg',
     image: '/images/products/export-grade.jpg',
     inStock: true,
     popular: false,
-    delivery: '5-7 days'
+    delivery: '5-7 days',
+    specifications: {
+      size: 'Various cuts',
+      grade: 'Export Grade',
+      shelfLife: '12 months',
+      packaging: 'International export packs'
+    }
   }
 ];
 
 export default function ProductsPage() {
-  const [imageErrors, setImageErrors] = useState<{[key: string]: boolean}>({});
   const { dispatch } = useCart();
+  const [imageErrors, setImageErrors] = useState<{[key: string]: boolean}>({});
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCartMessage, setShowCartMessage] = useState(false);
+  const [addedProduct, setAddedProduct] = useState<string>('');
 
   const handleImageError = (productId: string) => {
     setImageErrors(prev => ({ ...prev, [productId]: true }));
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: typeof products[0]) => {
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: product.minOrderQuantity,
+      unit: product.unit,
+      minOrderQuantity: product.minOrderQuantity,
+      image: product.image
+    };
+
     dispatch({ 
       type: 'ADD_ITEM', 
-      payload: {
-        ...product,
-        quantity: 1
-      }
+      payload: cartItem 
     });
-    
+
     // Show success message
-    alert(`${product.name} added to cart! Continue shopping or proceed to checkout.`);
+    setAddedProduct(product.name);
+    setShowCartMessage(true);
+    
+    // Auto hide message after 3 seconds
+    setTimeout(() => {
+      setShowCartMessage(false);
+    }, 3000);
   };
 
-  const handleInquire = (product: any) => {
-    // Simple alert for now - you can replace this with a modal or direct contact form
-    alert(`Thank you for your interest in ${product.name}!\n\nPrice: ${formatPrice(product.price)} per ${product.unit}\nMinimum Order: ${product.minOrder}\n\nWe'll contact you within 24 hours to discuss your order.`);
+  const handleInquire = (product: typeof products[0]) => {
+    const message = `I'm interested in ${product.name}\n\nMinimum Order: ${product.minOrder}\nPrice: ${formatPrice(product.price)} per ${product.unit}\n\nPlease send me more details.`;
+    window.location.href = `/contact?message=${encodeURIComponent(message)}`;
   };
 
   const formatPrice = (price: number) => {
@@ -130,225 +189,200 @@ export default function ProductsPage() {
     }).format(price);
   };
 
-  const calculatePricePerUnit = (product: any) => {
+  const calculatePricePerUnit = (product: typeof products[0]) => {
     if (product.unit === 'piece') {
       return `${formatPrice(product.price)}/piece`;
     }
     return `${formatPrice(product.price)}/kg`;
   };
 
+  const categories = [
+    { id: 'all', name: 'All Products' },
+    { id: 'fingerlings', name: 'Fingerlings' },
+    { id: 'juveniles', name: 'Juveniles' },
+    { id: 'table-size', name: 'Table Size' },
+    { id: 'smoked', name: 'Smoked Products' },
+    { id: 'export', name: 'Export Grade' }
+  ];
+
+  const filteredProducts = selectedCategory === 'all' 
+    ? products 
+    : products.filter(product => product.category === selectedCategory);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
       
+      {/* Cart Success Message */}
+      {showCartMessage && (
+        <div className="fixed top-20 right-4 z-50 animate-slide-in">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span>{addedProduct} added to cart!</span>
+          </div>
+        </div>
+      )}
+
       <div className="pt-24">
-        {/* Enhanced Hero Section with More Visible Background */}
-        <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-          {/* Background Image with Lighter Overlay */}
-          <div className="absolute inset-0">
-            <Image
-              src="/images/products/hero-background.jpg"
-              alt="Fish Supreme Farm - Premium Catfish Products"
-              fill
-              className="object-cover"
-              priority
-            />
-            {/* Lighter gradient overlay to show more background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-900/60 via-primary-800/50 to-aquatic-600/60"></div>
-            {/* Reduced radial gradient */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-700/15 to-primary-900/0"></div>
-            {/* Additional light overlay for better text readability */}
-            <div className="absolute inset-0 bg-black/15"></div>
+        {/* Hero Section - REMOVED BOUNCY SCROLL INDICATOR */}
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary-900 to-aquatic-800">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}></div>
           </div>
           
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/25 backdrop-blur-sm border border-white/35 mb-8 shadow-2xl">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              <span className="text-white text-sm font-semibold tracking-wide drop-shadow-lg">Premium Aquaculture Products</span>
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+              <span className="text-white text-sm font-semibold tracking-wide">Premium Aquaculture Products</span>
             </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-2xl">
-              Supreme Catfish
-              <span className="block text-aquatic-200 bg-gradient-to-r from-aquatic-200 to-green-200 bg-clip-text text-transparent drop-shadow-2xl">Products</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+              Premium Catfish
+              <span className="block text-aquatic-300">Products</span>
             </h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-10 leading-relaxed text-white drop-shadow-2xl">
-              From premium fingerlings to export-grade smoked products - delivering excellence at every stage of the aquaculture journey
+            <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed text-white/90">
+              From premium fingerlings to export-grade smoked products - delivering excellence at every stage
             </p>
-            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
-              <Link
-                href="#products"
-                className="bg-white text-primary-700 px-10 py-5 rounded-full font-bold text-lg hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-2xl flex items-center space-x-3"
-              >
-                <span>Explore Products</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </Link>
-              <Link
-                href="/contact"
-                className="border-2 border-white text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center space-x-3 bg-white/10"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
-                <span>Bulk Order Inquiry</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Cart Quick Access - Replaced the bouncing scroll indicator */}
-          <div className="absolute bottom-8 right-8">
             <Link
-              href="/cart"
-              className="group bg-white/20 backdrop-blur-sm border border-white/30 text-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 shadow-2xl flex items-center space-x-2"
+              href="#products"
+              className="inline-block bg-white text-primary-700 px-8 py-3 rounded-full font-bold hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-lg"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span>View Cart</span>
+              Browse Products
             </Link>
           </div>
         </section>
 
-        {/* Trust Bar */}
-        <section className="py-12 bg-white border-b border-gray-200 shadow-sm">
+        {/* Category Filter */}
+        <section className="py-8 bg-gray-50 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { number: '10,000+', label: 'Monthly Fingerlings' },
-                { number: '50,000+', label: 'Annual Production' },
-                { number: '15+', label: 'States Served' },
-                { number: '98%', label: 'Customer Satisfaction' }
-              ].map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-primary-600 mb-2">{stat.number}</div>
-                  <div className="text-gray-600 text-sm font-medium">{stat.label}</div>
-                </div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    selectedCategory === category.id
+                      ? 'bg-primary-600 text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border'
+                  }`}
+                >
+                  {category.name}
+                </button>
               ))}
             </div>
           </div>
         </section>
 
         {/* Products Grid */}
-        <section id="products" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        <section id="products" className="py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Enhanced Header */}
-            <div className="text-center mb-20">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-100 text-primary-800 text-sm font-semibold mb-6">
-                Our Product Portfolio
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Premium Catfish Selection
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                Discover our comprehensive range of catfish products, meticulously nurtured from hatchery to harvest with uncompromising quality standards
-              </p>
-            </div>
-
             {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product) => (
                 <div 
                   key={product.id}
-                  className="group bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden hover:shadow-3xl transition-all duration-500 hover:-translate-y-3"
+                  className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow"
                 >
                   {/* Product Image */}
-                  <div className="relative h-72 overflow-hidden">
+                  <div className="relative h-48">
                     {!imageErrors[product.id] ? (
                       <Image
                         src={product.image}
                         alt={product.name}
                         fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="object-cover"
                         onError={() => handleImageError(product.id)}
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary-100 to-aquatic-100 flex items-center justify-center">
-                        <div className="text-center text-primary-700">
-                          <div className="text-4xl mb-3">🐟</div>
-                          <p className="font-semibold text-lg">{product.name}</p>
+                      <div className="w-full h-full bg-gradient-to-br from-primary-50 to-blue-50 flex items-center justify-center">
+                        <div className="text-center text-primary-600">
+                          <div className="text-3xl mb-2">🐟</div>
+                          <p className="font-semibold">{product.name}</p>
                         </div>
                       </div>
                     )}
                     
-                    {/* Popular Badge */}
-                    {product.popular && (
-                      <div className="absolute top-5 left-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center space-x-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                        <span>Best Seller</span>
-                      </div>
-                    )}
-                    
-                    {/* Price Badge */}
-                    <div className="absolute top-5 right-5 bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-xl text-sm font-bold shadow-lg border border-gray-200">
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-2">
+                      {product.popular && (
+                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                          Best Seller
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute top-3 right-3 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-bold">
                       {calculatePricePerUnit(product)}
-                    </div>
-
-                    {/* Min Order Badge */}
-                    <div className="absolute bottom-5 left-5 bg-black/80 text-white px-3 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
-                      📦 Min: {product.minOrder}
-                    </div>
-
-                    {/* Delivery Badge */}
-                    <div className="absolute bottom-5 right-5 bg-blue-500/90 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                      🚚 {product.delivery}
                     </div>
                   </div>
                   
                   {/* Product Content */}
-                  <div className="p-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors duration-300">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600 mb-6 leading-relaxed text-lg">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {product.name}
+                      </h3>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        Min: {product.minOrder}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 mb-4 line-clamp-2">
                       {product.description}
                     </p>
                     
-                    {/* Key Features */}
+                    {/* Quick Features */}
                     <div className="mb-6">
-                      <h4 className="font-semibold text-gray-900 mb-4 text-lg flex items-center">
-                        <svg className="w-5 h-5 text-primary-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                        </svg>
-                        Product Features:
-                      </h4>
-                      <ul className="text-gray-600 space-y-3">
-                        {product.features.map((feature, index) => (
-                          <li key={index} className="flex items-center text-base">
-                            <svg className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="grid grid-cols-2 gap-2">
+                        {product.features.slice(0, 4).map((feature, index) => (
+                          <div key={index} className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                            {feature}
-                          </li>
+                            <span className="truncate">{feature}</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
+                    </div>
+                    
+                    {/* Specifications */}
+                    <div className="mb-6 bg-gray-50 rounded-lg p-3">
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Specifications:</h4>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div><span className="font-medium">Size:</span> {product.specifications.size}</div>
+                        <div><span className="font-medium">Grade:</span> {product.specifications.grade}</div>
+                        <div><span className="font-medium">Shelf Life:</span> {product.specifications.shelfLife}</div>
+                        <div><span className="font-medium">Packaging:</span> {product.specifications.packaging}</div>
+                      </div>
                     </div>
                     
                     {/* Action Buttons */}
-                    <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-                      <div className="text-sm text-gray-500 font-medium">
-                        📞 Contact for pricing
-                      </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="bg-primary-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 hover:scale-105 text-sm border border-primary-600 flex items-center space-x-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span>Add to Cart</span>
-                        </button>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Add to Cart ({formatPrice(product.price * product.minOrderQuantity)})</span>
+                      </button>
+                      
+                      <div className="grid grid-cols-2 gap-3">
                         <button
                           onClick={() => handleInquire(product)}
-                          className="bg-gradient-to-r from-primary-600 to-aquatic-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-aquatic-700 transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm flex items-center space-x-2"
+                          className="w-full border border-primary-600 text-primary-600 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors text-sm"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          <span>Quick Inquire</span>
+                          Quick Inquiry
                         </button>
+                        <Link
+                          href={`/contact?product=${product.id}`}
+                          className="w-full border border-gray-300 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm text-center"
+                        >
+                          Get Quote
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -356,166 +390,98 @@ export default function ProductsPage() {
               ))}
             </div>
 
-            {/* Enhanced Additional Info */}
-            <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                <div className="bg-primary-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            {/* Empty State */}
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-600 mb-6">Try selecting a different category</p>
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                >
+                  Show All Products
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-12 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Fish Supreme?</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                We're committed to delivering the highest quality catfish products with exceptional service
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Quality Certified</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  All products meet stringent quality standards with regular health checks and quality assurance protocols.
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Quality Guaranteed</h3>
+                <p className="text-gray-600">
+                  Every product undergoes strict quality checks to ensure premium standards
                 </p>
               </div>
-              <div className="text-center bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                <div className="bg-aquatic-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-8 h-8 text-aquatic-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Nationwide Delivery</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Reliable delivery network across Nigeria with specialized transport for live and processed products.
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Fast Delivery</h3>
+                <p className="text-gray-600">
+                  Nationwide delivery with specialized transport for live and processed fish
                 </p>
-              </div>
-              <div className="text-center bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                <div className="bg-green-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Flexible Payment</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Multiple payment options including bank transfer, with customized payment plans for bulk orders.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Enhanced Pricing Comparison Section */}
-        <section className="py-20 bg-gradient-to-r from-primary-50 to-aquatic-50">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Transparent Pricing</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Competitive market pricing with volume-based discounts for wholesale buyers
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
-                    <span className="w-3 h-8 bg-primary-600 rounded-full mr-4"></span>
-                    Live Catfish Products
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Table Size Catfish', price: 4000, unit: 'kg', desc: 'Fresh, live 300-500g fish' },
-                      { name: 'Catfish Juveniles', price: 300, unit: 'piece', desc: '4-6 weeks old, pond-ready' },
-                      { name: 'Catfish Fingerlings', price: 25, unit: 'piece', desc: 'Premium quality, disease-resistant' }
-                    ].map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-6 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
-                        <div>
-                          <span className="font-semibold text-gray-900 text-lg">{item.name}</span>
-                          <p className="text-gray-500 text-sm mt-1">{item.desc}</p>
-                        </div>
-                        <span className="text-2xl font-bold text-primary-600">{formatPrice(item.price)}/{item.unit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
-                    <span className="w-3 h-8 bg-amber-600 rounded-full mr-4"></span>
-                    Processed Catfish Products
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Smoked Catfish - Mid Cuts', price: 15000, unit: 'kg', desc: 'Vacuum-packed, 6-month shelf life' },
-                      { name: 'Smoked Catfish - Whole', price: 15000, unit: 'kg', desc: 'Premium whole fish presentation' },
-                      { name: 'Export Grade Catfish', price: 18000, unit: 'kg', desc: 'International standards, HACCP certified' }
-                    ].map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-6 bg-amber-50 rounded-2xl hover:bg-amber-100 transition-colors">
-                        <div>
-                          <span className="font-semibold text-gray-900 text-lg">{item.name}</span>
-                          <p className="text-gray-500 text-sm mt-1">{item.desc}</p>
-                        </div>
-                        <span className="text-2xl font-bold text-amber-600">{formatPrice(item.price)}/{item.unit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
               
-              <div className="text-center mt-12 pt-12 border-t border-gray-200">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 mb-8">
-                  <p className="text-lg text-gray-700 mb-2">
-                    🎉 <strong>Special bulk discounts available</strong> for orders exceeding minimum quantities
-                  </p>
-                  <p className="text-gray-600">
-                    Contact us for customized pricing based on your order volume and delivery location
-                  </p>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    href="/contact"
-                    className="inline-block bg-primary-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-primary-700 transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-lg"
-                  >
-                    Request Custom Quote
-                  </Link>
-                  <Link
-                    href="/cart"
-                    className="inline-block border-2 border-primary-600 text-primary-600 px-10 py-4 rounded-full font-bold text-lg hover:bg-primary-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                  >
-                    View Cart & Checkout
-                  </Link>
-                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Secure Ordering</h3>
+                <p className="text-gray-600">
+                  Safe and secure ordering process with multiple payment options
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Enhanced CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-primary-600 via-primary-700 to-aquatic-600 relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgba(255,255,255,0.15)_1px,_transparent_0)] bg-[length:40px_40px]"></div>
-          </div>
-          
-          <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Order Premium Catfish?
-            </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Join hundreds of satisfied customers across Nigeria who trust Fish Supreme Farm for consistent quality, reliable supply, and exceptional service.
+        {/* CTA Section */}
+        <section className="py-12 bg-primary-700">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold text-white mb-4">Need Help Choosing?</h2>
+            <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+              Our aquaculture experts are ready to help you select the right products for your needs
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/contact"
-                className="bg-white text-primary-700 px-10 py-4 rounded-full font-bold text-lg hover:bg-gray-50 transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg flex items-center justify-center space-x-3"
+                className="bg-white text-primary-700 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <span>Contact Sales Team</span>
+                Contact Our Team
               </Link>
-              <Link
-                href="/cart"
-                className="border-2 border-white text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-primary-700 transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center justify-center space-x-3"
+              <a
+                href="tel:+2348123456789"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-bold hover:bg-white hover:text-primary-700 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span>Proceed to Cart</span>
-              </Link>
+                Call Now: +234 812 345 6789
+              </a>
             </div>
-            <p className="text-white/70 mt-8 text-lg">
-              📧 Email: orders@fishsupremefarm.com
-            </p>
           </div>
         </section>
       </div>

@@ -1,36 +1,26 @@
+// src/app/cart/page.tsx - UPDATED VERSION
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useCart } from '@/contexts/CartContext';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 
-// Mock cart data since the cart context has issues
-const mockCartItems = [
-  {
-    id: 'table-size-catfish',
-    name: 'Table Size Catfish',
-    description: 'Fresh, live catfish ready for market and consumption',
-    price: 4000,
-    unit: 'kg',
-    quantity: 50,
-    minOrder: '50kg'
-  },
-  {
-    id: 'smoked-catfish-mid-cuts',
-    name: 'Smoked Catfish - Mid Cuts',
-    description: 'Premium smoked catfish mid cuts',
-    price: 15000,
-    unit: 'kg',
-    quantity: 20,
-    minOrder: '20kg'
-  }
-];
-
 export default function CartPage() {
-  // Using mock data instead of problematic cart context
-  const cartItems = mockCartItems;
+  const { state, dispatch } = useCart();
+  const [orderNotes, setOrderNotes] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on client side to avoid hydration issues
+  useState(() => {
+    setIsClient(true);
+  });
+
+  const cartItems = state.items || [];
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const subtotal = state.total || 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -40,6 +30,66 @@ export default function CartPage() {
       maximumFractionDigits: 0
     }).format(price);
   };
+
+  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      handleRemoveItem(productId);
+      return;
+    }
+    
+    dispatch({
+      type: 'UPDATE_QUANTITY',
+      payload: {
+        id: productId,
+        quantity: newQuantity
+      }
+    });
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    dispatch({
+      type: 'REMOVE_ITEM',
+      payload: productId
+    });
+  };
+
+  const handleClearCart = () => {
+    if (confirm('Are you sure you want to clear your cart?')) {
+      dispatch({
+        type: 'CLEAR_CART'
+      });
+    }
+  };
+
+  const handleContactOrder = () => {
+    const productList = cartItems.map(item => 
+      `${item.name} - ${item.quantity} ${item.unit} - ${formatPrice(item.price * item.quantity)}`
+    ).join('\n');
+
+    const message = `Order Inquiry from Fish Supreme Farm\n\nProducts:\n${productList}\n\nSubtotal: ${formatPrice(subtotal)}\n\nAdditional Notes: ${orderNotes || 'None'}`;
+    
+    // Redirect to contact page with order details
+    window.location.href = `/contact?order=${encodeURIComponent(message)}`;
+  };
+
+  // Show loading state until client-side rendering is confirmed
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="pt-24 pb-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="animate-pulse">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 rounded-full"></div>
+              <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-48 mx-auto mb-8"></div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -56,7 +106,7 @@ export default function CartPage() {
             <p className="text-gray-600 mb-8">Add some products to your cart to get started.</p>
             <Link
               href="/products"
-              className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+              className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors inline-block"
             >
               Continue Shopping
             </Link>
@@ -74,10 +124,10 @@ export default function CartPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Order Inquiry
+              Your Shopping Cart ({itemCount} {itemCount === 1 ? 'item' : 'items'})
             </h1>
             <p className="text-lg text-gray-600">
-              Review your selected products and contact us to complete your order
+              Review your selected products and proceed to complete your order
             </p>
           </div>
 
@@ -85,58 +135,126 @@ export default function CartPage() {
             {/* Cart Items */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    Selected Products ({itemCount} items)
+                    Selected Products ({itemCount} {itemCount === 1 ? 'item' : 'items'})
                   </h2>
+                  <button
+                    onClick={handleClearCart}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center space-x-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Clear Cart</span>
+                  </button>
                 </div>
                 
                 <div className="divide-y divide-gray-200">
                   {cartItems.map((item) => (
                     <div key={item.id} className="p-6">
                       <div className="flex flex-col sm:flex-row gap-6">
-                        {/* Product Image Placeholder */}
+                        {/* Product Image */}
                         <div className="flex-shrink-0">
-                          <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center">
-                            <span className="text-primary-600 font-semibold text-sm text-center">
-                              {item.name.split(' ')[0]}
-                            </span>
+                          <div className="w-24 h-24 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center overflow-hidden">
+                            {item.image ? (
+                              <div className="relative w-full h-full">
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="96px"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-primary-600 font-semibold text-sm text-center px-1">
+                                {item.name.split(' ')[0]}
+                              </span>
+                            )}
                           </div>
                         </div>
 
                         {/* Product Details */}
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {item.name}
-                          </h3>
-                          <p className="text-gray-600 text-sm mb-3">
-                            {item.description}
-                          </p>
-                          <div className="flex flex-wrap gap-4 text-sm">
-                            <span className="text-primary-600 font-semibold">
-                              {formatPrice(item.price)} per {item.unit}
-                            </span>
-                            <span className="text-gray-500">
-                              Quantity: {item.quantity} {item.unit}
-                            </span>
-                            <span className="text-gray-500">
-                              Min. Order: {item.minOrder}
-                            </span>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {item.name}
+                              </h3>
+                              <p className="text-primary-600 font-semibold text-sm mt-1">
+                                {formatPrice(item.price)} per {item.unit}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              aria-label="Remove item"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          {/* Quantity Controls */}
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-700 font-medium">Quantity:</span>
+                              <div className="flex items-center space-x-3">
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                  disabled={item.quantity <= item.minOrderQuantity}
+                                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                  </svg>
+                                </button>
+                                <span className="w-12 text-center font-semibold text-gray-900">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                                  aria-label="Increase quantity"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <span className="text-sm text-gray-600">
+                                {item.unit}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-500">
+                              Minimum order: {item.minOrderQuantity} {item.unit}
+                            </div>
                           </div>
                         </div>
 
                         {/* Item Total */}
                         <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900 mb-2">
+                          <p className="text-xl font-bold text-gray-900 mb-2">
                             {formatPrice(item.price * item.quantity)}
                           </p>
                           <p className="text-sm text-gray-500">
-                            Total
+                            Item total
                           </p>
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Subtotal */}
+                <div className="p-6 border-t border-gray-200 bg-gray-50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-gray-900">Subtotal</span>
+                    <span className="text-2xl font-bold text-primary-600">{formatPrice(subtotal)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -144,6 +262,8 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mt-6 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
                 <textarea
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
                   placeholder="Any special requirements, delivery instructions, or questions about your order..."
                   className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                 />
@@ -164,7 +284,7 @@ export default function CartPage() {
                 
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
+                    <span>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   
@@ -179,12 +299,12 @@ export default function CartPage() {
                   </div>
 
                   <div className="pt-4 space-y-3">
-                    <Link
-                      href="/contact"
+                    <button
+                      onClick={handleContactOrder}
                       className="w-full bg-primary-600 text-white py-4 px-4 rounded-xl font-bold hover:bg-primary-700 transition-all duration-300 hover:shadow-lg text-center block text-lg"
                     >
                       Contact to Complete Order
-                    </Link>
+                    </button>
                     
                     <Link
                       href="/products"
@@ -236,7 +356,7 @@ export default function CartPage() {
                     <svg className="w-4 h-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span>Email: orders@fishsupreme.com</span>
+                    <span>Email: orders@fishsupremefarm.com</span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <svg className="w-4 h-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
